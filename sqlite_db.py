@@ -1,9 +1,10 @@
 import sqlite3
 from sqlite3.dbapi2 import Connection
-from typing import Any, List, Literal, Optional
+from typing import Any, List, Literal, Optional, Union
 from pathlib import Path
 from os      import remove  as remove_file
 from os.path import exists  as file_exists
+import typing
 from annoy import AnnoyIndex
 from numpy import array
 
@@ -43,7 +44,12 @@ class TableHandler:
         self._init_table()
 
     def _init_table(self):
-        self.db_connection.write_on_db(self._get_table_creation_query())
+        """
+        if table already exists
+        it s not rebuilt
+        """
+        if not self._table_exists() or not self._get_num_rows_in_table() > 0:
+            self.db_connection.write_on_db(self._get_table_creation_query())
 
     def _get_table_creation_query(self)-> str:
         return f"""CREATE TABLE IF NOT EXISTS {self.table_name} (
@@ -57,6 +63,13 @@ class TableHandler:
         sql = f"SELECT * FROM sqlite_master where name='{self.table_name}'"
         query_result = self.db_connection.sqlite_conn.execute(sql).fetchall()
         return len(query_result) == 1
+
+    def _get_num_rows_in_table(self) -> int:
+        """
+        costa circa 0.01sec
+        """
+        num_arrays = self.db_connection.sqlite_conn.execute(f"""SELECT count(*) FROM {self.table_name}""")
+        return num_arrays.fetchone()[0]
 
     def dump_table(self, as_array:Optional[bool]=True)-> List[Any]:
         sql = f"SELECT * FROM {self.table_name}"
@@ -83,11 +96,12 @@ class TableHandler:
 VectorMetrics = Literal['angular', 'euclidean', 'hamming', 'dot']
 
 class VectorIndex:
-    def __init__(self, index_file_name:Path, num_dimensions:int, vector_distance_metric:VectorMetrics="angular", initial_vectors:Optional[List[List[float]]]=None ):
+    def __init__(self, index_file_name:Path, num_dimensions:int, vector_distance_metric:VectorMetrics="angular", initial_vectors:Optional[List[List[float]]]=None, tree_count_exponential:float = 0.3 ):
         assert index_file_name.suffix == ".idx", "Not a valid db file name ({index_file_name})" 
         self.index_file_name = index_file_name
         self.num_dimensions = num_dimensions
         self.vector_distance_metric:Literal['angular', 'euclidean', 'hamming', 'dot'] = vector_distance_metric
+        self.tree_count_exponential = tree_count_exponential
 
         self.vector_index = self._init_index()# if initial_vectors is None else self.update_index(initial_vectors)
 
@@ -113,14 +127,50 @@ class VectorIndex:
         for index, vect in zip(indexes, vectors):
             self.vector_index.add_item(index, list(vect) )
 
-        self.vector_index.build(max(1, int( len(indexes)**0.3 )))
+        self.vector_index.build(max(1, int( len(indexes)**self.tree_count_exponential )))
         if and_save:
             self.vector_index.save(str(self.index_file_name))
 
         return _vi
 
+    def get_nearest_vectors(self, ref:Union[int,List[float]], top_n:int, include_distances:bool=False ):
+        if isinstance(ref, list):
+            return self.vector_index.get_nns_by_vector(ref, top_n, include_distances)
+        elif isinstance(ref, int):
+            return self.vector_index.get_nns_by_item(ref, top_n, include_distances)
+        else:
+            raise Exception("Please, provide an index or a vector, got {ref}.")
 
 
+class VectorSpace:
+    def __init__(self, db_connection:DbManager, space_name:str, dimensions:int):
+        self.th = TableHandler(db_connection, space_name, dimensions)
+        self.vi = VectorIndex(Path(f"{space_name}.idx"), dimensions)
+
+    def add_vector(self, vector:List[float], index:Optional[int] ) -> Optional[int]:
+        if index is None:
+            new_index = self.th._get_num_rows_in_table() + 1
+            self.th.insert_row(new_index, vector)
+            return new_index
+        else:
+            self.th.insert_row(index, vector)
+        
+
+    def remove_vector(self, index:int):
+        pass
+
+    def get_space(self, with_index:bool=True):
+        pass
+
+
+
+
+"""
+L' idea è di creare un db per utente
+per ogni db creare tabelle per ogni spazio vettoriale
+
+per ogni spazio anche un indice
+"""
 
 db = DbManager(Path("./tmpdb.db"))
 

@@ -14,7 +14,7 @@ class VectorUserManager:
         self.db = DbManager( self.default_path.joinpath(Path(self.username + ".db")) )
         self.vs:MutableMapping[str, VectorSpace] = {}
 
-    def add_space(self, space_name:str, dimensions:int, description:Optional[str], max_unsynched_vectors:int=0):
+    def add_space(self, space_name:str, dimensions:int, description:str="", max_unsynched_vectors:int=0):
         self.vs[space_name] = VectorSpace(
             self.db,
             str(self.default_path.joinpath(Path(space_name))),
@@ -28,10 +28,12 @@ class VectorUserManager:
         del self.vs[space_name]
 
     def _destruct(self):
+        # first, we delete avery table in the db
+        for _, space in self.vs.items():
+            space._delete_vector_space()
+        # then we close connection and delete the db file
         self.db.sqlite_conn.close()
         remove_file(self.db.sqlite_file_name)
-        for space_name, space in self.vs.items():
-            space._delete_vector_space()
-
+        # finally, we delete the default path were everything is stored
         self.default_path.rmdir()
 

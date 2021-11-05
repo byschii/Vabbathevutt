@@ -1,11 +1,12 @@
 
 from typing import Any, List, Literal, Optional, Union
 from pathlib import Path
-from os      import remove  as remove_file
-from os.path import exists  as file_exists
+from os      import sep    as os_separator
+from os      import remove as remove_file
+from os.path import exists as file_exists
 
 from annoy import AnnoyIndex
-from numpy import array
+import numpy as np
 
 from db_utils import *
 
@@ -34,21 +35,21 @@ class VectorIndex:
         return _vi
 
     def _update_index(self, data:List[List[float]])-> AnnoyIndex:
-        np_data = array(data)
-        return self.update_index(np_data[:, 0], np_data[:,1:])
+        np_data = np.array(data)
+        return self.update_index(np_data[:, 0].astype(np.int), np_data[:,1:])
 
     def update_index(self, indexes:List[int], vectors:List[List[float]], and_save:Optional[bool]=False)-> AnnoyIndex:
         self._detach_index()
-        _vi = self._init_index()
+        self.vector_index = self._init_index()
 
         for index, vect in zip(indexes, vectors):
-            self.vector_index.add_item(index, list(vect) )
+            self.vector_index.add_item(index, vect )
 
         self.vector_index.build(max(1, int( len(indexes)**self.tree_count_exponential )))
         if and_save:
             self.vector_index.save(str(self.index_file_name))
 
-        return _vi
+        return self.vector_index
 
     def get_nearest_vectors(self, ref:Union[int,List[float]], top_n:int, include_distances:bool=False ):
         if isinstance(ref, list):
@@ -59,15 +60,18 @@ class VectorIndex:
             raise Exception("Please, provide an index or a vector, got {ref}.")
 
 
+
+
+
 class VectorSpace:
     def __init__(self, db_connection:DbManager, space_name:str, dimensions:int, description:Optional[str], max_unsynched_vectors:int=0):
-        self.th = TableHandler(db_connection, space_name.split('/')[-1], dimensions)
+        self.th = TableHandler(db_connection, space_name.split(os_separator)[-1], dimensions)
         self.vi = VectorIndex(Path(f"{space_name}.idx"), dimensions)
         self.description = description
         self.not_synched_vectors:int = 0
         self.max_unsynched_vectors:int = max_unsynched_vectors
 
-    def insert_vector(self, vector:List[float], index:Optional[int] ) -> int:
+    def insert_vector(self, vector:List[float], index:Optional[int]=None, force_update:bool=False ) -> int:
         """
         inserisce un nuovo vettore nello spazio
         se necessario, rebuilda l'index
@@ -81,12 +85,12 @@ class VectorSpace:
         else:
             self.th.create_row(index, vector)
         
-        self._maybe_sync(1)
+        self._maybe_sync(1, force_update)
         return index 
 
-    def _maybe_sync(self, weight_of_update:int):
+    def _maybe_sync(self, weight_of_update:int, force_update:bool=False):
         self.not_synched_vectors += weight_of_update
-        if self.not_synched_vectors >= self.max_unsynched_vectors:
+        if (self.not_synched_vectors >= self.max_unsynched_vectors) or force_update:
             self.vi._update_index(self.th.dump_table())
             self.not_synched_vectors = 0
 
@@ -110,6 +114,7 @@ class VectorSpace:
         return self.th.get_row(index)
 
     def get_similar_vector(self, ref:Union[int,List[float]], top_n:int, include_distances:bool=False):
+        """ return similar vector, veri fast (1ms)"""
         return self.vi.get_nearest_vectors(ref, top_n, include_distances)
 
     def _delete_vector_space(self):

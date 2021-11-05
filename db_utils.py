@@ -63,6 +63,7 @@ class TableHandler:
         );"""
 
     def _table_exists(self):
+        """ check if a table exists in sqlite databese"""
         sql = f"SELECT * FROM sqlite_master where name='{self.table_name}'"
         query_result = self.db_connection.sqlite_conn.execute(sql).fetchall()
         return len(query_result) == 1

@@ -1,10 +1,10 @@
 
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Tuple, Literal, Optional, Union
 from pathlib import Path
 from os      import sep    as os_separator
 from os      import remove as remove_file
 from os.path import exists as file_exists
-
+import time
 from annoy import AnnoyIndex
 import numpy as np
 
@@ -51,7 +51,9 @@ class VectorIndex:
 
         return self.vector_index
 
-    def get_nearest_vectors(self, ref:Union[int,List[float]], top_n:int, include_distances:bool=False ):
+    def get_nearest_vectors(self,
+        ref:Union[int,List[float]], top_n:int, include_distances:bool=False
+        ) -> Union[ List[int], Tuple[List[int], List[float]] ]:
         if isinstance(ref, list):
             return self.vector_index.get_nns_by_vector(ref, top_n, include_distances)
         elif isinstance(ref, int):
@@ -59,11 +61,7 @@ class VectorIndex:
         else:
             raise Exception("Please, provide an index or a vector, got {ref}.")
 
-
-
-
-
-class VectorSpace:
+class VectorSpacePartition:
     def __init__(self, db_connection:DbManager, space_name:str, dimensions:int, description:Optional[str], max_unsynched_vectors:int=0):
         self.th = TableHandler(db_connection, space_name.split(os_separator)[-1], dimensions)
         self.vi = VectorIndex(Path(f"{space_name}.idx"), dimensions)
@@ -113,13 +111,52 @@ class VectorSpace:
         """ ritorna un vettore in particolare """
         return self.th.get_row(index)
 
-    def get_similar_vector(self, ref:Union[int,List[float]], top_n:int, include_distances:bool=False):
-        """ return similar vector, veri fast (1ms)"""
+    def get_similar_vector(self, ref:Union[int, List[float]], top_n:int, include_distances:bool=False):
+        """ return similar vector, very fast (1ms)"""
         return self.vi.get_nearest_vectors(ref, top_n, include_distances)
 
     def _delete_vector_space(self):
         self.th._drop()
         self.vi._detach_index()
 
+class VectorSpace:
+    def __init__(self, name, dimensions:int) -> None:
+        self.name = name
+        self.dimensions:int = dimensions
+        self.db_connection = DbManager(Path(name))
+        self.spaces: List[VectorSpacePartition] = []
+        self.spaces_size: List[int] = [0]
+        self.create_partition()
 
+    def create_partition(self, max_unsynched_vectors:int=0) -> VectorSpacePartition:
+        """ creates a partition """
+        self.spaces.append(
+            VectorSpacePartition(
+                self.db_connection,
+                f"{self.name}_{len(self.spaces)}",
+                self.dimensions,
+                description=None,
+                max_unsynched_vectors=max_unsynched_vectors
+            )
+        )
+        self.spaces_size.append(0)
+        return self.spaces[-1]
+
+    def get_similar_vector(self, ref:List[float], top_n:int, include_distances:bool=False):
+        """ return similar vector"""
+        similars = []
+        for space in self.spaces:
+            similars += space.get_similar_vector(ref, top_n//len(self.spaces), include_distances)
+        return similars
+        
+    def insert_vector(self, vector:List[float], index:Optional[int]=None, force_update:bool=False) -> None:
+        """ inserts a vector in a random partition """
+        start = time.time()
+        random_partition_index = np.random.choice(
+            range(len(self.spaces)),
+            p=list(map(lambda x:1-x/sum(self.spaces_size), self.spaces_size )))
+        self.spaces[random_partition_index].insert_vector(vector, index, force_update)
+        self.spaces_size[random_partition_index] += 1
+        end = time.time()
+        if end-start > 5: self.create_partition()
 

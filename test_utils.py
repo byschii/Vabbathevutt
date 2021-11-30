@@ -12,7 +12,6 @@ def timeit_context(name, max_time_ms):
     time.sleep(0.1)
 
 
-
 class timer:
     def __init__(self, max_time_ms:int, test_name:str=None):
         self._start = None

@@ -1,0 +1,3 @@
+https://visualstudio.microsoft.com/it/visual-cpp-build-tools/
+annoy
+numpy

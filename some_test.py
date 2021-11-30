@@ -1,30 +1,31 @@
 
 from test_utils import timeit_context, timer
 import random
-import vector_utils
-import db_utils
+
+
 import numpy as np
 
-"""
-def user_creation_and_destruction(test_name, max_time):
+from vector_space import VectorSpace
+
+
+
+
+
+def vector_insertion_speed_test(test_name, max_time):
+
+    # creates 100 arrays of size 100
+    arrays_to_insert = np.random.rand(100, 100)
+    vs = VectorSpace("teo.db", 100)
 
     with timer(max_time, test_name) as t:
-        vum = vector_utils.VectorSpace("teo")
-        vum._destruct()
+        for array in arrays_to_insert:
+            vs.insert_vector(array)
+
     return t._is_ok()
 
-user_creation_and_destruction(f"test_{user_creation_and_destruction.__name__}", 10)
-"""
+    
+vector_insertion_speed_test(vector_insertion_speed_test.__name__, 10)
 
-
-sizes = [22,3,12,44,1]
-indexes = [0,1,2,3,4]
-
-probs = list(map(lambda x:1-x/sum(sizes), sizes ))
-
-print(probs)
-for i in range(10):
-    print(np.random.choice(indexes, p=[0.1, 0.05, 0.05, 0.2, 0.4, 0.2]))
 
 
 

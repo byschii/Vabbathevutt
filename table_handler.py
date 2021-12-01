@@ -1,5 +1,5 @@
 from sqlite3.dbapi2 import Connection
-from numpy import array
+from numpy import array, array2string
 
 from pathlib import Path
 from os      import remove  as remove_file
@@ -65,13 +65,13 @@ class TableHandler:
         result = self.db_connection.sqlite_conn.execute(sql).fetchall() 
         return array(result) if as_array else result 
 
-    def create_row(self, pk:int, row_values:List[Any]) -> None:
+    def create_row(self, pk:int, row_values:List[float]) -> None:
         """Add a new vector to the table. It requires the primary key."""
         assert len(row_values) == self.table_size, f"Wrong size. Array length={len(row_values)}, required length={self.table_size}"
         
         _insert_into_table_query = f"""INSERT INTO {self.table_name} VALUES (
             {pk}, 
-            {str(row_values)[1 : -1]}
+            {array2string(array(row_values), separator=', ')[1 : -1]}
         );"""
         self.db_connection.write_on_db(_insert_into_table_query)
 

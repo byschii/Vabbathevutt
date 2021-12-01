@@ -15,12 +15,12 @@ class VectorSpace:
     def __init__(self, name, dimensions:int) -> None:
         self.name = name
         self.dimensions:int = dimensions
-        self.db_connection = DbManager(Path(name))
+        self.db_connection = DbManager(Path(name + ".db"))
         self.spaces: List[VectorSpacePartitionStats] = []
-        self.max_insert_time = 5 # seconds
+        self.max_insert_time = 0.03 # seconds
         self.create_partition()
 
-    def create_partition(self, max_unsynched_vectors:int=0) -> None:
+    def create_partition(self, max_unsynched_vectors:int=3) -> None:
         """Creates a partition with a default name """
         self.spaces.append(
             VectorSpacePartitionStats(
@@ -55,14 +55,41 @@ class VectorSpace:
         If the insertion is too slow, it will create a new partition (smaller, so faster to update)
         """
         start = time.time()
-        spaces_size = [vsps.vector_space_size for vsps in self.spaces]
-        random_partition_index = np.random.choice(
-            range(len(self.spaces)),
-            p=list(map(lambda x:1-x/sum(spaces_size), spaces_size ))
-        )
+        random_partition_index = 0
+        if len(self.spaces)>1:
+
+            spaces_size = [vsps.vector_space_size for vsps in self.spaces]
+            print(spaces_size)
+            print(list(
+                    map(
+                        lambda s: 1 - (s / sum(spaces_size)),
+                        spaces_size
+                    )))
+
+            
+            random_partition_index = np.random.choice(
+                range(len(self.spaces)),
+                p = list(
+                    map(
+                        lambda s: 1 - (s / sum(spaces_size)),
+                        spaces_size
+                    )
+                )
+            )
         new_pk = self.spaces[random_partition_index].vector_space_partition.insert_vector(vector, index, force_update)
         self.spaces[random_partition_index].vector_space_size += 1
         self.spaces[random_partition_index].pks_in_vector_space_partition.add(new_pk)
+        print(round(time.time() - start, 3))
         if time.time()-start > self.max_insert_time:
+            print('manz')
             self.create_partition()
+
+    def destroy(self) -> None:
+        """
+        Destroys every partition from the space
+        """
+        for s in self.spaces:
+            s.vector_space_partition._delete_vector_space()
+
+        self.db_connection._detach_sqlite()
 

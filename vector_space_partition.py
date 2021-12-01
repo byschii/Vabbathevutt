@@ -2,8 +2,6 @@
 from typing import Any, List, Optional, Union
 from pathlib import Path
 from os      import sep    as os_separator
-import time
-import numpy as np
 
 from table_handler import TableHandler
 from vector_index  import VectorIndex

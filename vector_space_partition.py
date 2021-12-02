@@ -51,6 +51,7 @@ class VectorSpacePartition:
         Insertion weight is 1, deletion weight is 2.
         """
         self.not_synched_vectors += weight_of_update
+
         if (self.not_synched_vectors >= self.max_unsynched_vectors) or force_update:
             self.vi._update_index(self.th.dump_table())
             self.not_synched_vectors = 0

@@ -12,12 +12,12 @@ from vector_space_partition import VectorSpacePartition, VectorSpacePartitionSta
 
 class VectorSpace:
     """This class orchestrates multilpe VectorSpacePartition objects"""
-    def __init__(self, name, dimensions:int) -> None:
+    def __init__(self, name, dimensions:int, insertion_speed:float = 0.075) -> None:
         self.name = name
         self.dimensions:int = dimensions
         self.db_connection = DbManager(Path(name + ".db"))
         self.spaces: List[VectorSpacePartitionStats] = []
-        self.max_insert_time = 0.03 # seconds
+        self.max_insert_time = insertion_speed # seconds
         self.create_partition()
 
     def create_partition(self, max_unsynched_vectors:int=3) -> None:
@@ -46,7 +46,7 @@ class VectorSpace:
         """ return similar vector"""
         similars = []
         for space in self.spaces:
-            similars += space.get_similar_vector(ref, top_n//len(self.spaces), include_distances)
+            similars += space.vector_space_partition.get_similar_vector(ref, top_n//len(self.spaces), include_distances)
         return similars
         
     def insert_vector(self, vector:List[float], index:Optional[int]=None, force_update:bool=False) -> None:
@@ -57,31 +57,17 @@ class VectorSpace:
         start = time.time()
         random_partition_index = 0
         if len(self.spaces)>1:
-
-            spaces_size = [vsps.vector_space_size for vsps in self.spaces]
-            print(spaces_size)
-            print(list(
-                    map(
-                        lambda s: 1 - (s / sum(spaces_size)),
-                        spaces_size
-                    )))
-
-            
+            spaces_size = np.array([vsps.vector_space_size for vsps in self.spaces])
+            probs = ( 1 - spaces_size / np.sum(spaces_size)) / ( spaces_size.size -1)
             random_partition_index = np.random.choice(
-                range(len(self.spaces)),
-                p = list(
-                    map(
-                        lambda s: 1 - (s / sum(spaces_size)),
-                        spaces_size
-                    )
-                )
+                np.arange(spaces_size.size),
+                p = probs
             )
+
         new_pk = self.spaces[random_partition_index].vector_space_partition.insert_vector(vector, index, force_update)
         self.spaces[random_partition_index].vector_space_size += 1
         self.spaces[random_partition_index].pks_in_vector_space_partition.add(new_pk)
-        print(round(time.time() - start, 3))
         if time.time()-start > self.max_insert_time:
-            print('manz')
             self.create_partition()
 
     def destroy(self) -> None:

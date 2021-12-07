@@ -44,7 +44,7 @@ class VectorSpace:
         raise ValueError(f"Vector with pk {pk} not found")
 
     def get_similar_vector(self, ref:List[float], top_n:int, include_distances:bool=False):
-        """ return similar vector"""
+        """return closest vectors to the given one"""
         similars = []
         for space in self.spaces:
             similars += space.vector_space_partition.get_similar_vector(ref, top_n//len(self.spaces) + 1, True)

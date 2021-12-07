@@ -1,9 +1,18 @@
 
-devo controllare cosa succede se provo a 'chiedere' un vettore, usando la sua PK, che però non esiste
 
 devo trovare una maniera di passare i parametri piu in fondo alle classi piu low level
  - num di vettori prima di aggiornare
- - metriche da usare
+ - metriche da usare per la distanza tra vettori
+ - numero di vettori che possono non essere sincronizzabili
 
-devo sistemare la gestione dei nomi dei file
+devo mettere un metodo per forzare l'update del db senza inserimento prima
+
+scrivere che 'sqlite' è molto piu comodo di un intero server sql esterno
+
+dovrei fare un metodi per prendere un pool di vettori chiedendo la distanza all'user
+
+fare notere che non c'è una ricerca da 'vettore' a 'pk'
+
+non c'è la ricerca per distanza
+
 

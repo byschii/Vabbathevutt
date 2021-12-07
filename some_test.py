@@ -11,11 +11,11 @@ import plotext as plt
 
 def vector_insertion_speed_test(test_name, max_time):
 
-    num_of_arrays = 1500
+    num_of_arrays = 1200
     array_dims = 100
     arrays_to_insert = np.random.rand(num_of_arrays, array_dims)
 
-    EXPECTED_INSERTION_TIME = 0.04
+    EXPECTED_INSERTION_TIME = 0.03
 
     vs = VectorSpace("teo", array_dims, EXPECTED_INSERTION_TIME)
 

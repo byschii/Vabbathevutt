@@ -16,3 +16,6 @@ fare notere che non c'è una ricerca da 'vettore' a 'pk'
 non c'è la ricerca per distanza
 
 
+to do:
+
+how to:

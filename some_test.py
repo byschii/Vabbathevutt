@@ -1,5 +1,7 @@
 
 
+from pathlib import Path
+from db_manager import DbManager
 from test_utils import timer
 
 import numpy as np
@@ -7,6 +9,8 @@ import numpy as np
 from vector_space import VectorSpace
 
 import plotext as plt
+
+from vector_space_partition import VectorSpacePartition
 
 
 def vector_insertion_speed_test(test_name, max_time):
@@ -49,6 +53,25 @@ def vector_insertion_speed_test(test_name, max_time):
 
     return True
 
-vector_insertion_speed_test(vector_insertion_speed_test.__name__, 10)
+
+
+def vector_similarity_speed_test(test_name, max_time):
+    name = 'dd'
+    dbc =  DbManager(Path(name + ".db"))
+    vsp = VectorSpacePartition(dbc, name, 100)
+    
+
+    for _ in range(99):
+        vsp.insert_vector(np.random.rand(100))
+
+    i = vsp.get_similar_vectors(
+        3,#np.random.rand(100),
+        3
+    )
+    print(i)
+
+vector_similarity_speed_test(vector_insertion_speed_test.__name__, 10)
+
+# vector_insertion_speed_test(vector_insertion_speed_test.__name__, 10)
 
 

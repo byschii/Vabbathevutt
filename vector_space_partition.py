@@ -75,14 +75,20 @@ class VectorSpacePartition:
         """Returns a specific vector"""
         return self.th.get_row(pk)
 
-    def get_similar_vector(self, ref:Union[int, List[float]], top_n:int, include_distances:bool=False):
+    def get_similar_vectors(self, ref:Union[int, List[float]], top_n:int, include_distances:bool=False):
         """
         Return vectors similar to 'ref'.
         Tipically very fast (1ms).
 
         This function can be usefull to get the pk of a vector (which may have been inserted without storing the index)
         """
-        return self.vi.get_nearest_vectors(ref, top_n, include_distances)
+        print(f"get_similar_vectors({ref}, {top_n}, {include_distances})")
+        print(f"self.vi = {self.vi}")
+        print(f"self.vi.vector_index.get_n_items= {self.vi.vector_index.get_n_items()}")
+        print("--")
+        x = self.vi.get_nearest_vectors(ref, top_n, include_distances)
+        print(f"x = {x}")
+        return x
 
     def _delete_vector_space(self):
         """

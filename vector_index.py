@@ -73,9 +73,21 @@ class VectorIndex:
         If ref is a vector (list), it returns the closest vectors as their values -> Tuple[List[int], List[float]].
         It is possible to return the distances too.
         """
-        if isinstance(ref, list):
-            return self.vector_index.get_nns_by_vector(ref, top_n, include_distances)
+
+        print(f"ref is {ref}")
+        print(f"self.vector_index is {self.vector_index}")
+        print(f"self.vector_index.get_n_items() is {self.vector_index.get_n_items()}")
+        print(f"self.vector_index.get_nns_by_items(1) is {self.vector_index.get_nns_by_item(1, top_n)}")
+
+        if isinstance(ref, list) or isinstance(ref, np.ndarray):
+            return np.array(list(map(
+                lambda pk: self.vector_index.get_item_vector(pk), 
+                self.vector_index.get_nns_by_vector(ref, top_n, include_distances)
+            )))
         elif isinstance(ref, int):
-            return self.vector_index.get_nns_by_item(ref, top_n, include_distances)
+            print(">>>")
+            cc = self.vector_index.get_nns_by_item(ref, top_n)
+            print(f"cc is {cc}")
+            return cc
         else:
-            raise Exception("Please, provide an index or a vector, got {ref}.")
+            raise Exception(f"Please, provide an index or a vector, got {type(ref)}.")

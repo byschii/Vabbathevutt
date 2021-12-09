@@ -47,11 +47,13 @@ class VectorSpace:
         """return closest vectors to the given one"""
         similars = []
         for space in self.spaces:
-            similars += space.vector_space_partition.get_similar_vector(ref, top_n//len(self.spaces) + 1, True)
+            s = space.vector_space_partition.get_similar_vectors(ref, top_n//len(self.spaces)+1, False)
+            print(s, ref)
+            similars += s 
 
         # filter similar vectors by lowest distance
-        similars = sorted(similars, key=lambda x: x[0])
-        similars = similars[:top_n]
+        #similars = sorted(similars, key=lambda x: x[0])
+        #similars = similars[:top_n]
         return similars
         
     def insert_vector(self, vector:List[float], index:Optional[int]=None, force_update:bool=False) -> None:

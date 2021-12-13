@@ -49,7 +49,7 @@ class VectorSpace:
         _partition_indices, _partition_distances = None, None
         for space in self.spaces:
             _partition_indices, _partition_distances = space.vector_space_partition.get_similar_vectors(
-                ref, space.vector_space_size//15 + 1, True
+                ref, space.vector_space_size()//15 + 1, True
             )
             assert isinstance(_partition_indices, list) and isinstance(_partition_distances, list)
             similars += [
@@ -71,14 +71,13 @@ class VectorSpace:
         start = timing()
         random_partition_index = 0
         if len(self.spaces)>1:
-            spaces_size = np.array([vsps.vector_space_size for vsps in self.spaces])
-            probs = ( 1 - spaces_size / np.sum(spaces_size)) / ( spaces_size.size -1)
+            spaces_size = np.array([vsps.vector_space_size() for vsps in self.spaces])
+            probs = (1-spaces_size / np.sum(spaces_size)) / (spaces_size.size-1)
             random_partition_index = np.random.choice(
                 np.arange(spaces_size.size),
                 p = probs
             )
         new_pk = self.spaces[random_partition_index].vector_space_partition.insert_vector(vector, index, force_update)
-        self.spaces[random_partition_index].vector_space_size += 1
         self.spaces[random_partition_index].pks_in_vector_space_partition.add(new_pk)
 
         if timing()-start > self.max_insert_time:

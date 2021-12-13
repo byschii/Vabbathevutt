@@ -105,3 +105,16 @@ class VectorIndex:
         if isinstance(indices, int):
             return self.vector_index.get_item_vector(indices)
         return np.array([self.vector_index.get_item_vector(index) for index in indices])
+
+    @staticmethod
+    def get_vector_distance(vector_1:List[float], vector_2:List[float], vector_distance_metric:VectorMetrics="euclidean",)-> float:
+        """
+        Return the distance between two vectors.
+        """    
+
+        _vi = AnnoyIndex(len(vector_1), vector_distance_metric)
+        _vi.add_item(0, vector_1)
+        _vi.add_item(1, vector_2)
+        return _vi.get_distance(0, 1)
+
+    

@@ -100,5 +100,8 @@ class VectorSpacePartitionStats:
     """This class is just to help with the handling of multiple VectorSpacePartition"""
     def __init__(self, vsp: VectorSpacePartition):
         self.vector_space_partition = vsp 
-        self.vector_space_size = 0
+        #self.vector_space_size = 0
         self.pks_in_vector_space_partition = set()
+
+    def vector_space_size(self):
+        return len(self.pks_in_vector_space_partition)

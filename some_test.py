@@ -58,11 +58,11 @@ def vector_insertion_speed_test(test_name, max_time):
 
 def vector_similarity_speed_test(test_name, max_time):
 
-    num_of_arrays = 3000
+    num_of_arrays = 2000
     array_dims = 100
     arrays_to_insert = np.random.randn(num_of_arrays, array_dims)
 
-    EXPECTED_INSERTION_TIME = 0.03
+    EXPECTED_INSERTION_TIME = 0.04
 
     vs = VectorSpace("teo", array_dims, EXPECTED_INSERTION_TIME)
     
@@ -77,18 +77,17 @@ def vector_similarity_speed_test(test_name, max_time):
     ---
     """)
 
-    # time to retrive
-    
+
+    # time to retrive    
     for _ in range(5):
-        x = vs.get_similar_vectors(np.random.randn(array_dims), 2, True)
+        x = vs.get_similar_vectors(np.random.randn(array_dims), 3, True)
         print(x[1].mean())
     
-    
 
-
-    
-
-
+    plt.clp()
+    plt.scatter( [s.vector_space_size() for s in vs.spaces] )
+    plt.title("Scatter Plot")
+    plt.show()
 
     
     vs.destroy()

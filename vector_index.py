@@ -10,6 +10,7 @@ import numpy as np
 from table_handler import *
 
 VectorMetrics = Literal['angular', 'euclidean', 'hamming', 'dot']
+BoolToF = Literal[True, False]
 
 class VectorIndex:
     """
@@ -17,11 +18,11 @@ class VectorIndex:
     Containst an Annoy index and helps keeping it up to date when adding new vectors.
     This is done by saving the dimension of the vectors, the distance metric used and a name to eventually save the index.s
     """
-    def __init__(self, index_file_name:Path, num_dimensions:int, vector_distance_metric:VectorMetrics="angular", initial_vectors:Optional[List[List[float]]]=None, tree_count_exponential:float = 0.3 ):
+    def __init__(self, index_file_name:Path, num_dimensions:int, vector_distance_metric:VectorMetrics="euclidean", initial_vectors:Optional[List[List[float]]]=None, tree_count_exponential:float = 0.3 ):
         assert index_file_name.suffix == ".idx", "Not a valid db file name ({index_file_name})" 
         self.index_file_name = index_file_name
         self.num_dimensions = num_dimensions
-        self.vector_distance_metric:Literal['angular', 'euclidean', 'hamming', 'dot'] = vector_distance_metric
+        self.vector_distance_metric:VectorMetrics = vector_distance_metric
         self.tree_count_exponential = tree_count_exponential
 
         self.vector_index = self._init_index()# if initial_vectors is None else self.update_index(initial_vectors)
@@ -64,30 +65,43 @@ class VectorIndex:
         np_data = np.array(data)
         return self.update_index(np_data[:, 0].astype(np.int), np_data[:,1:])
 
-    def get_nearest_vectors(self,
+    def get_nearest_vectors_indices(self,
         ref:Union[int,List[float]], top_n:int, include_distances:bool=False
         ) -> Union[ List[int], Tuple[List[int], List[float]] ]:
         """
-        Return close vectors.
-        If ref is an index (int), it returns the closest vectors as their index -> List[int].
-        If ref is a vector (list), it returns the closest vectors as their values -> Tuple[List[int], List[float]].
+        Return a list of the closes vectors rappresented as their indices during insertion.
+        The reference vector, can be provided both as its index in the space or as a list of floats (if the vector has not been inserted).
         It is possible to return the distances too.
+
+        I splitted the function in two because I found that the Annoy library typing requires a 'Literal[True]/Literal[False]
         """
+        if include_distances:
+            return self._get_nearest_vectors_indices_with_distancies(ref, top_n)
+        else:
+            return self._get_nearest_vectors_indices_without_distancies(ref, top_n)
 
-        print(f"ref is {ref}")
-        print(f"self.vector_index is {self.vector_index}")
-        print(f"self.vector_index.get_n_items() is {self.vector_index.get_n_items()}")
-        print(f"self.vector_index.get_nns_by_items(1) is {self.vector_index.get_nns_by_item(1, top_n)}")
 
+    def _get_nearest_vectors_indices_with_distancies(self, ref:Union[int,List[float]], top_n:int) -> Tuple[List[int], List[float]]:
         if isinstance(ref, list) or isinstance(ref, np.ndarray):
-            return np.array(list(map(
-                lambda pk: self.vector_index.get_item_vector(pk), 
-                self.vector_index.get_nns_by_vector(ref, top_n, include_distances)
-            )))
+            return  self.vector_index.get_nns_by_vector(ref, top_n, include_distances = True)
         elif isinstance(ref, int):
-            print(">>>")
-            cc = self.vector_index.get_nns_by_item(ref, top_n)
-            print(f"cc is {cc}")
-            return cc
+            return self.vector_index.get_nns_by_item(ref, top_n, include_distances = True)
         else:
             raise Exception(f"Please, provide an index or a vector, got {type(ref)}.")
+
+    def _get_nearest_vectors_indices_without_distancies(self, ref:Union[int,List[float]], top_n:int) -> List[int]:
+        if isinstance(ref, list) or isinstance(ref, np.ndarray):
+            return  self.vector_index.get_nns_by_vector(ref, top_n, include_distances = False)
+        elif isinstance(ref, int):
+            return self.vector_index.get_nns_by_item(ref, top_n, include_distances = False)
+        else:
+            raise Exception(f"Please, provide an index or a vector, got {type(ref)}.")
+    
+
+    def get_vectors_from_indices(self, indices:Union[int, List[int]] )-> Union[List[float], List[List[float]]]:
+        """
+        Converts every index in the corresponding vector.
+        """
+        if isinstance(indices, int):
+            return self.vector_index.get_item_vector(indices)
+        return np.array([self.vector_index.get_item_vector(index) for index in indices])

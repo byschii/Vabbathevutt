@@ -43,18 +43,25 @@ class VectorSpace:
                 return space.vector_space_partition.get_vector(pk)
         raise ValueError(f"Vector with pk {pk} not found")
 
-    def get_similar_vector(self, ref:List[float], top_n:int, include_distances:bool=False):
+    def get_similar_vectors(self, ref:List[float], top_n:int, include_distances:bool=False):
         """return closest vectors to the given one"""
         similars = []
+        _partition_indices, _partition_distances = None, None
         for space in self.spaces:
-            s = space.vector_space_partition.get_similar_vectors(ref, top_n//len(self.spaces)+1, False)
-            print(s, ref)
-            similars += s 
+            _partition_indices, _partition_distances = space.vector_space_partition.get_similar_vectors(
+                ref, space.vector_space_size//15 + 1, True
+            )
+            assert isinstance(_partition_indices, list) and isinstance(_partition_distances, list)
+            similars += [
+                ( _pi, _pd )
+                for _pi, _pd in zip(_partition_indices, _partition_distances)
+            ]
 
         # filter similar vectors by lowest distance
-        #similars = sorted(similars, key=lambda x: x[0])
-        #similars = similars[:top_n]
-        return similars
+        similars = sorted(similars, key=lambda x: x[1])
+        similars = np.array(similars)[:top_n]
+        return similars.T if include_distances else similars[:,0]
+
         
     def insert_vector(self, vector:List[float], index:Optional[int]=None, force_update:bool=False) -> None:
         """

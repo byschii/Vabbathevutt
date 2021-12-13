@@ -82,13 +82,8 @@ class VectorSpacePartition:
 
         This function can be usefull to get the pk of a vector (which may have been inserted without storing the index)
         """
-        print(f"get_similar_vectors({ref}, {top_n}, {include_distances})")
-        print(f"self.vi = {self.vi}")
-        print(f"self.vi.vector_index.get_n_items= {self.vi.vector_index.get_n_items()}")
-        print("--")
-        x = self.vi.get_nearest_vectors(ref, top_n, include_distances)
-        print(f"x = {x}")
-        return x
+        return self.vi.get_nearest_vectors_indices(ref, top_n, include_distances = include_distances)
+
 
     def _delete_vector_space(self):
         """
@@ -97,6 +92,8 @@ class VectorSpacePartition:
         """
         self.th._drop()
         self.vi._detach_index()
+
+
 
 
 class VectorSpacePartitionStats:

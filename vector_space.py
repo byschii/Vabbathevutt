@@ -13,12 +13,13 @@ from vector_space_partition import VectorSpacePartition, VectorSpacePartitionSta
 
 class VectorSpace:
     """This class orchestrates multilpe VectorSpacePartition objects"""
-    def __init__(self, name, dimensions:int, insertion_speed:float = 0.075) -> None:
+    def __init__(self, name, dimensions:int, insertion_speed:float = 0.075, rebalance_probs = 0.65) -> None:
         self.name = name
         self.dimensions:int = dimensions
         self.db_connection = DbManager(Path(name + ".db"))
         self.spaces: List[VectorSpacePartitionStats] = []
         self.max_insert_time = insertion_speed # seconds
+        self.rebalance_probs = rebalance_probs
         self.create_partition()
 
     def create_partition(self, max_unsynched_vectors:int=0) -> None:
@@ -63,7 +64,7 @@ class VectorSpace:
         return similars.T if include_distances else similars[:,0]
 
         
-    def insert_vector(self, vector:List[float], index:Optional[int]=None, force_update:bool=False) -> None:
+    def insert_vector(self, vector:List[float], pk:Optional[int]=None, force_update:bool=False) -> None:
         """
         Inserts a vector in a random partition.
         If the insertion is too slow, it will create a new partition (smaller, so faster to update)
@@ -72,12 +73,20 @@ class VectorSpace:
         random_partition_index = 0
         if len(self.spaces)>1:
             spaces_size = np.array([vsps.vector_space_size() for vsps in self.spaces])
+            rp = lambda p,m: p * (1+self.rebalance_probs) if p > m else p * (1-self.rebalance_probs)
+            spaces_size = np.array([rp(s, spaces_size.mean()) for s in spaces_size])
             probs = (1-spaces_size / np.sum(spaces_size)) / (spaces_size.size-1)
             random_partition_index = np.random.choice(
                 np.arange(spaces_size.size),
                 p = probs
             )
-        new_pk = self.spaces[random_partition_index].vector_space_partition.insert_vector(vector, index, force_update)
+            # random_partition_index = np.random.choice( np.arange(spaces_size.size))
+        
+        pk = max((
+            max(s.pks_in_vector_space_partition) if len(s.pks_in_vector_space_partition)>0 else 0
+            for s in self.spaces
+        )) + 1 
+        new_pk = self.spaces[random_partition_index].vector_space_partition.insert_vector(vector, pk, force_update)
         self.spaces[random_partition_index].pks_in_vector_space_partition.add(new_pk)
 
         if timing()-start > self.max_insert_time:

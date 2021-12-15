@@ -1,6 +1,6 @@
 
 
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from db_manager import DbManager
 from test_utils import timer
 
@@ -16,11 +16,12 @@ from vector_space_partition import VectorSpacePartition
 
 def vector_insertion_speed_test(test_name, max_time):
 
-    num_of_arrays = 1200
-    array_dims = 100
+    num_of_arrays = 1000
+    array_dims = 20
     arrays_to_insert = np.random.rand(num_of_arrays, array_dims)
 
-    EXPECTED_INSERTION_TIME = 0.03
+    EXPECTED_INSERTION_TIME = 0.3 * np.e
+    print(EXPECTED_INSERTION_TIME)
 
     vs = VectorSpace("teo", array_dims, EXPECTED_INSERTION_TIME)
 
@@ -36,21 +37,22 @@ def vector_insertion_speed_test(test_name, max_time):
     print(f"""
     ---
     Total time: {global_timer.elapsed:.3f} seconds
-    {global_timer.elapsed / num_of_arrays:.3f} per insertion
     Average insertion time: {np.array(insertion_times).mean():.3f} seconds
     Median insertion time: {np.median(np.array(insertion_times)):.3f} seconds
+    Max insertion time: {np.max(np.array(insertion_times)):.3f} seconds
     Number of partitions {len(vs.spaces)}
     ---
     """)
 
 
-
+    """
     plt.clp()
     plt.scatter(insertion_times, )
     plt.title("Scatter Plot")
     plt.show()
+    """
 
-    vs.destroy()
+    # vs.destroy()
 
     return True
 
@@ -58,11 +60,11 @@ def vector_insertion_speed_test(test_name, max_time):
 
 def vector_similarity_speed_test(test_name, max_time):
 
-    num_of_arrays = 2000
+    num_of_arrays = 1700
     array_dims = 100
     arrays_to_insert = np.random.randn(num_of_arrays, array_dims)
 
-    EXPECTED_INSERTION_TIME = 0.04
+    EXPECTED_INSERTION_TIME = 0.02
 
     vs = VectorSpace("teo", array_dims, EXPECTED_INSERTION_TIME)
     
@@ -81,21 +83,20 @@ def vector_similarity_speed_test(test_name, max_time):
     # time to retrive    
     for _ in range(5):
         x = vs.get_similar_vectors(np.random.randn(array_dims), 3, True)
-        print(x[1].mean())
+        #print(x[1].mean())
     
 
-    plt.clp()
-    plt.scatter( [s.vector_space_size() for s in vs.spaces] )
-    plt.title("Scatter Plot")
-    plt.show()
 
     
     vs.destroy()
     return True
 
 
-vector_similarity_speed_test(vector_insertion_speed_test.__name__, 10)
-# vector_insertion_speed_test(vector_insertion_speed_test.__name__, 10)
+# vector_similarity_speed_test(vector_insertion_speed_test.__name__, 10)
+
+vector_insertion_speed_test(vector_insertion_speed_test.__name__, 10)
+
+
 
 
 

@@ -17,7 +17,7 @@ from vector_space_partition import VectorSpacePartition
 def vector_insertion_speed_test(test_name, max_time):
 
     num_of_arrays = 1000
-    array_dims = 20
+    array_dims = 100
     arrays_to_insert = np.random.rand(num_of_arrays, array_dims)
 
     EXPECTED_INSERTION_TIME = 0.3 * np.e

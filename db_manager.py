@@ -41,6 +41,7 @@ class DbManager:
         """
         if self.sqlite_conn is not None:
             self.sqlite_conn.execute(sql)
+            self.sqlite_conn.commit()
         else:
             raise Exception("Writing sql without connection")
 

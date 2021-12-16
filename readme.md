@@ -53,7 +53,12 @@ plt.title("Scatter Plot")
 plt.show()
 ```
 
-
-
+#### Valuable Alternatives
+- [Milvus](https://milvus.io)
+- [Pinecone](https://www.pinecone.io)
+- [Vespa](https://vespa.ai)
+- [Weaviate](https://www.semi.technology/developers/weaviate/current)
+- [Vald](https://vald.vdaas.org)
+- [Drant](https://qdrant.tech)
 
 

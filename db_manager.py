@@ -18,6 +18,10 @@ class DbManager:
         """Instantiate a new connection the sqlite database"""
         assert sqlite_file_name.suffix == ".db", "Not a valid db file name ({sqlite_file_name})" 
         self.sqlite_file_name = sqlite_file_name
+        # delete the file if it already exists
+        # cause i dont support init from old databases
+        if file_exists(self.sqlite_file_name):
+            remove_file(self.sqlite_file_name)
         self.sqlite_conn: Connection = self._init_sqlite()
 
     def _init_sqlite(self, first_sql:Optional[str]=None) -> Connection:
@@ -28,7 +32,7 @@ class DbManager:
         return sqlite_conn
 
     def _detach_sqlite(self)-> bool:
-        """Close the connection to the sqlite database and remove the db file"""
+        """Close the connection to the sqlite database and remove the db file"""        
         self.sqlite_conn.close()
         if file_exists(self.sqlite_file_name):
             remove_file(self.sqlite_file_name)

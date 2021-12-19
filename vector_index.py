@@ -26,6 +26,9 @@ class VectorIndex:
         self.tree_count_exponential = tree_count_exponential
 
         self.vector_index = self._init_index()# if initial_vectors is None else self.update_index(initial_vectors)
+        if initial_vectors is not None:
+            self._update_index(initial_vectors)
+
 
     def _detach_index(self):
         """It deletes the index, and if it were store in a file, it deletes the file."""

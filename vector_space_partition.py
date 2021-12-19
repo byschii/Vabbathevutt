@@ -23,9 +23,24 @@ class VectorSpacePartition:
         self.not_synched_vectors:int = 0
         self.max_unsynched_vectors:int = max_unsynched_vectors
 
-        self.DELETIION_WEIGHT:int = 2
         self.INSERTION_WEIGHT:int = 1
         self.UPDATE_WEIGHT:int = 1
+        self.DELETION_WEIGHT:int = 2
+
+
+    def _maybe_sync(self, weight_of_update:int, force_update:bool=False):
+        """
+        This method is used to decide whether to update the index or not.
+        It is called every time a vector is inserted, deleted or updated.
+        
+        The decision is made based on the number of unsynched vectors, which is updated with a weight provided by the caller.
+        Insertion weight is 1, deletion weight is 2.
+        """
+        self.not_synched_vectors += weight_of_update
+
+        if force_update or (self.not_synched_vectors >= self.max_unsynched_vectors):
+            self.vi._update_index(self.th.dump_table())
+            self.not_synched_vectors = 0
 
     def insert_vector(self, vector:List[float], pk:Optional[int]=None, force_update:bool=False ) -> int:
         """
@@ -42,20 +57,6 @@ class VectorSpacePartition:
         self._maybe_sync(self.INSERTION_WEIGHT, force_update)
         return pk 
 
-    def _maybe_sync(self, weight_of_update:int, force_update:bool=False):
-        """
-        This method is used to decide whether to update the index or not.
-        It is called every time a vector is inserted, deleted or updated.
-        
-        The decision is made based on the number of unsynched vectors, which is updated with a weight provided by the caller.
-        Insertion weight is 1, deletion weight is 2.
-        """
-        self.not_synched_vectors += weight_of_update
-
-        if (self.not_synched_vectors >= self.max_unsynched_vectors) or force_update:
-            self.vi._update_index(self.th.dump_table())
-            self.not_synched_vectors = 0
-
     def update_vector(self, vector:List[float], pk:int ):
         """Updates a vector in the space via the TableHandler"""
         self.th.update_row(pk, vector)
@@ -64,7 +65,7 @@ class VectorSpacePartition:
     def remove_vector(self, pk:int):
         """Remove a vector in the space via the TableHandler"""
         self.th.delete_row(pk)
-        self._maybe_sync(self.DELETIION_WEIGHT)
+        self._maybe_sync(self.DELETION_WEIGHT)
 
     def get_space(self, with_pk:bool=True) -> List[List[Any]]:
         """This function returns the entire space as a list of pk+vectors"""

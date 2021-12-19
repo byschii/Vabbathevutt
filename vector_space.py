@@ -13,7 +13,15 @@ from vector_space_partition import VectorSpacePartition, VectorSpacePartitionSta
 
 class VectorSpace:
     """This class orchestrates multilpe VectorSpacePartition objects"""
-    def __init__(self, name, dimensions:int, insertion_speed:float = 0.075, rebalance_probs = 0.65) -> None:
+    def __init__(self, name, dimensions:int, insertion_speed:float = 0.075, rebalance_probs:float = 0.65) -> None:
+        """
+        Creates a new vector space
+        parameters:
+            name: name of the vector space
+            dimensions: number of dimensions of the vectors
+            insertion_speed: a target speed for the vector insertion in seconds
+            rebalance_probs: a number to rebalance the probability of a given partition to be choose as the insertion target
+        """
         self.name = name
         self.dimensions:int = dimensions
         self.db_connection = DbManager(Path(name + ".db"))
@@ -95,6 +103,7 @@ class VectorSpace:
     def destroy(self) -> None:
         """
         Destroys every partition from the space
+        and deletes the database file
         """
         for s in self.spaces:
             s.vector_space_partition._delete_vector_space()

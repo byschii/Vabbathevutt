@@ -9,7 +9,7 @@ from vector_index import VectorIndex
 
 from vector_space import VectorSpace
 
-import plotext as plt
+# import plotext as plt
 
 from vector_space_partition import VectorSpacePartition
 
@@ -80,10 +80,10 @@ def vector_similarity_speed_test(test_name, max_time):
     """)
 
 
-    # time to retrive    
-    for _ in range(5):
-        x = vs.get_similar_vectors(np.random.randn(array_dims), 3, True)
-        #print(x[1].mean())
+    # average distance of retrived vectors    
+    for _ in range(2):
+        x = vs.get_similar_vectors(np.random.randn(array_dims), 3, False)
+        print(x)
     
 
 
@@ -92,9 +92,9 @@ def vector_similarity_speed_test(test_name, max_time):
     return True
 
 
-# vector_similarity_speed_test(vector_insertion_speed_test.__name__, 10)
+vector_similarity_speed_test(vector_insertion_speed_test.__name__, 10)
 
-vector_insertion_speed_test(vector_insertion_speed_test.__name__, 10)
+# vector_insertion_speed_test(vector_insertion_speed_test.__name__, 10)
 
 
 

@@ -52,7 +52,7 @@ When a vector is inserted, it is stored in a table on the SQLite database and th
 ### More things you can controll
 - The `VectorSpace` can be created with a `insertion_speed` parameter. Every insertion is timed and if the time taken is greater than `insertion_speed` than a new `VectorSpacePartitionStats` is instantiated and on next insertion it is very likely to be used as target for new vectors (since the new instance is smaler, it will take less time to keep the `VectorIndex` updated).
 
-- Also, the `VectorSpacePartition` handles `max_unsynched_vectors`. It allows you to store vector in the database without updating the index. It defaults to 0. Every operation in the `VectorSpacePartition` that modifies the space (`insert_vector`, `update_vector`, `remove_vector`) increments a counter which eventually signals a `VectorIndex` update.
+- Also, the `VectorSpacePartition` handles `max_unsynched_vectors`. It allows you to store vector in the database without updating the index. It defaults to `0`. Every operation in the `VectorSpacePartition` that modifies the space (`insert_vector`, `update_vector`, `remove_vector`) increments a counter which eventually signals a `VectorIndex` update.
 
 - You can also change the distance Annoy uses to calculate similarity. In the `VectorIndex` class there's `vector_distance_metric` which can be set to `Literal['angular', 'euclidean', 'hamming', 'dot']` (`euclidean` is default).
 
